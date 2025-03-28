@@ -1,6 +1,6 @@
 
 # Set base path
-base_path <- "C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/raw/"
+base_path <- "../../data-analysis/0_shared-data/raw/"
 
 ## HELPER FUNCTIONS ------------------------------------
 
@@ -119,3 +119,44 @@ get_foodins_lacounty_ssi <- function(proj_crs) {
   res <- st_read("C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/raw/foodinsp23_24_SSI.gpkg") %>%
     st_transform(proj_crs)
 }
+
+# Function to download retail food market data
+download_retail_food_markets_LB_PAS <- function() {
+  # Define the ArcGIS service URL
+  url <- "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_LB_PAS_V_2023/FeatureServer"
+  
+  # Fetch data using the helper function
+  market_data <- get_arcgis_data(url)
+  
+  # Check if data was retrieved
+  if (is.null(market_data)) {
+    message("Error: No data retrieved from ArcGIS service.")
+    return(NULL)
+  }
+  
+  # Standardize column names
+  colnames(market_data) <- gsub("USER_", "", colnames(market_data))
+  colnames(market_data) <- gsub("__", "_", colnames(market_data))
+  # change everything except last column to uppercase
+  last_col <- ncol(market_data)
+  colnames(market_data)[1:(last_col-1)] <- toupper(colnames(market_data)[1:(last_col-1)]) 
+  
+  # Save as GeoPackage
+  output_path <- file.path(base_path, "retail_food_markets_LB_PAS_V_2023.gpkg")
+  st_write(market_data, output_path, driver = "GPKG", append = FALSE)
+  
+  message("Retail food market data saved to: ", output_path)
+}
+
+# Function to load saved retail food market data
+get_retail_food_markets_LB_PAS <- function(proj_crs) {
+  file_path <- file.path(base_path, "retail_food_markets_LB_PAS_V_2023.gpkg")
+  
+  if (!file.exists(file_path)) {
+    stop("File not found! Run download_retail_food_markets() first.")
+  }
+  
+  st_read(file_path) %>%
+    st_transform(proj_crs)  # Transform to desired CRS
+}
+
