@@ -5,7 +5,6 @@ library(sf)
 library(httr)
 library(jsonlite)
 
-base_path <- "C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/raw/"
 
 # la county boundary 
 # last update: 08/03/2023
@@ -82,6 +81,9 @@ all_tracts <- tigris::tracts(state=state, county=county, year = year, class="sf"
 }
 
 # clip to some boundary
+# example path
+# /Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/raw/CA_Los Angeles_2020_census_tracts.gpkg
+
 get_census_tracts <- function(proj_crs, state, year, county, boundary=NULL) { 
   ct <- st_read(paste0(base_path, state,"_", county, "_", year,  "_census_tracts.gpkg")) %>%
     st_transform(proj_crs)
@@ -192,3 +194,12 @@ get_dem <- function(location="socal", proj_crs) {
   return(dem)
 }
 
+
+# PROCESSED DATA
+get_lac_weight_centroids <- function() {
+  return(st_read(paste0(processed_path, "LAC_origins/la_ct_wtcent_dat3182025.gpkg")))
+}
+
+get_lac_centroids <- function() {
+  return(st_read(paste0(processed_path, "LAC_origins/la_ctcent_dat3182025.gpkg")))
+}
