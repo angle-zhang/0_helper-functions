@@ -5,7 +5,6 @@ library(sf)
 library(httr)
 library(jsonlite)
 
-base_path <- "../0_shared-data/raw/"
 
 # la county boundary 
 # last update: 08/03/2023

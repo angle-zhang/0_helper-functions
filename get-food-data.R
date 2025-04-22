@@ -1,6 +1,5 @@
 
-# Set base path
-base_path <- "../../data-analysis/0_shared-data/raw/"
+
 
 ## HELPER FUNCTIONS ------------------------------------
 
@@ -111,12 +110,12 @@ download_foodins_lacounty_ssi <- function() {
   
   combined_data <- rbindlist(data_list, use.names = TRUE, fill=TRUE) 
   
-  st_write(combined_data, "C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/raw/foodinsp23_24_SSI.gpkg", driver="GPKG")
+  st_write(combined_data, "../../0_shared-data/raw/foodinsp23_24_SSI.gpkg", driver="GPKG")
 
 }
 
 get_foodins_lacounty_ssi <- function(proj_crs) { 
-  res <- st_read("C:/Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/raw/foodinsp23_24_SSI.gpkg") %>%
+  res <- st_read("../../0_shared-data/raw/foodinsp23_24_SSI.gpkg") %>%
     st_transform(proj_crs)
 }
 
