@@ -83,20 +83,30 @@ get_foodinsp_lacounty <- function() {
 download_foodins_lacounty_ssi <- function() {
   # Define URLs with corresponding source identifiers
   urls <- c(
-    "Dec_2024" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_Dec_2024/FeatureServer",
-    "June_2024" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_June_2024/FeatureServer",
-    "March_2024" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_March_2024/FeatureServer",
-    "Dec_2023" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_December_2023/FeatureServer"
-  ) 
+    "Dec_2024.markets" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_Dec_2024/FeatureServer",
+    "June_2024.markets" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_June_2024/FeatureServer",
+    "March_2024.markets" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_March_2024/FeatureServer",
+    "Dec_2023.markets" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_December_2023/FeatureServer", 
+    "March_2025.res" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Restaurants_042025_Final/FeatureServer",
+    "Dec_2024.res" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Restaurants_December_2024/FeatureServer",
+    "June_2024.res" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Restaurants_June_2024/FeatureServer",
+    "March_2024.res" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Restaurants_March_2024/FeatureServer",
+    "Dec_2023.res" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Restaurants_December_2023/FeatureServer"
+  )     
+
   # Initialize an empty list to store data frames
   data_list <- list()
+  
   # Iterate over URLs and their names
   for (source_id in names(urls)) {
     url <- urls[[source_id]]
     data <- get_arcgis_data(url)
     if (!is.null(data)) {
       print(url)
-      data$source <- source_id  # Add source identifier column
+      print(source_id)
+      txt <- base::strsplit(source_id, split = "\\.")[[1]]  # Add source identifier column
+      data$source <- txt[[1]]  # Add source identifier column
+      data$type <- txt[[2]]  # Add type identifier column
       data_list[[source_id]] <- data
       
       # standardize names
@@ -110,49 +120,58 @@ download_foodins_lacounty_ssi <- function() {
   
   combined_data <- rbindlist(data_list, use.names = TRUE, fill=TRUE) 
   
-  st_write(combined_data, "../../0_shared-data/raw/foodinsp23_24_SSI.gpkg", driver="GPKG")
+  st_write(combined_data, paste0(base_path, "foodinsp23_24_SSI.gpkg"), driver="GPKG", append=F)
 
 }
 
 get_foodins_lacounty_ssi <- function(proj_crs) { 
-  res <- st_read("../../0_shared-data/raw/foodinsp23_24_SSI.gpkg") %>%
+
+  res <- st_read(paste0(base_path, "foodinsp23_24_SSI.gpkg")) %>%
     st_transform(proj_crs)
 }
 
+
 # Function to download retail food market data
-download_retail_food_markets_LB_PAS <- function() {
-  # Define the ArcGIS service URL
-  url <- "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_LB_PAS_V_2023/FeatureServer"
+download_retail_food_LB_PAS <- function() {
+  urls <- c("markets" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Retail_Food_Markets_LB_PAS_V_2023/FeatureServer", 
+            "res" = "https://services1.arcgis.com/ZIL9uO234SBBPGL7/arcgis/rest/services/Restaurants_LB_PAS_V_2023/FeatureServer")  
   
-  # Fetch data using the helper function
-  market_data <- get_arcgis_data(url)
+  # get data and append to it using arcgis 
+  data <- data.frame()
   
-  # Check if data was retrieved
-  if (is.null(market_data)) {
+  for (type in names(urls)) { 
+    data <- rbind(data, get_arcgis_data(urls[[type]]) %>% mutate(type=type))  
+  }
+  
+  # check if data was retrieved
+  if (is.null(data)) {
     message("Error: No data retrieved from ArcGIS service.")
     return(NULL)
   }
   
   # Standardize column names
-  colnames(market_data) <- gsub("USER_", "", colnames(market_data))
-  colnames(market_data) <- gsub("__", "_", colnames(market_data))
+  colnames(data) <- gsub("USER_", "", colnames(data))
+  colnames(data) <- gsub("__", "_", colnames(data))
   # change everything except last column to uppercase
-  last_col <- ncol(market_data)
-  colnames(market_data)[1:(last_col-1)] <- toupper(colnames(market_data)[1:(last_col-1)]) 
-  
+  last_col <- ncol(data)
+  colnames(data)[1:(last_col-1)] <- toupper(colnames(data)[1:(last_col-1)]) 
+
   # Save as GeoPackage
-  output_path <- file.path(base_path, "retail_food_markets_LB_PAS_V_2023.gpkg")
-  st_write(market_data, output_path, driver = "GPKG", append = FALSE)
+  output_path <- file.path(base_path, "retail_food_LB_PAS_V_2023.gpkg")
   
-  message("Retail food market data saved to: ", output_path)
+  st_write(data, output_path, driver = "GPKG", append = FALSE)
+  
+  message("Retail food data saved to: ", output_path)
 }
 
+
 # Function to load saved retail food market data
-get_retail_food_markets_LB_PAS <- function(proj_crs) {
-  file_path <- file.path(base_path, "retail_food_markets_LB_PAS_V_2023.gpkg")
+get_retail_food_LB_PAS <- function(proj_crs) {
+  file_name <- "retail_food_LB_PAS_V_2023.gpkg"
+  file_path <- file.path(base_path, file_name)
   
   if (!file.exists(file_path)) {
-    stop("File not found! Run download_retail_food_markets() first.")
+    stop("File not found! Run download_retail_food_LB_PAS() first.")
   }
   
   st_read(file_path) %>%

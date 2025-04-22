@@ -6,6 +6,8 @@ library(httr)
 library(jsonlite)
 
 
+
+
 # la county boundary 
 # last update: 08/03/2023
 # source: https://egis-lacounty.hub.arcgis.com/datasets/0f58ddb711b84569ae0e7084c0404045_13/explore
@@ -81,6 +83,9 @@ all_tracts <- tigris::tracts(state=state, county=county, year = year, class="sf"
 }
 
 # clip to some boundary
+# example path
+# /Users/angie/OneDrive/Desktop/data-analysis/0_shared-data/raw/CA_Los Angeles_2020_census_tracts.gpkg
+
 get_census_tracts <- function(proj_crs, state, year, county, boundary=NULL) { 
   ct <- st_read(paste0(base_path, state,"_", county, "_", year,  "_census_tracts.gpkg")) %>%
     st_transform(proj_crs)
@@ -191,3 +196,12 @@ get_dem <- function(location="socal", proj_crs) {
   return(dem)
 }
 
+
+# PROCESSED DATA
+get_lac_weight_centroids <- function() {
+  return(st_read(paste0(processed_path, "LAC_origins/la_ct_wtcent_dat3182025.gpkg")))
+}
+
+get_lac_centroids <- function() {
+  return(st_read(paste0(processed_path, "LAC_origins/la_ctcent_dat3182025.gpkg")))
+}
