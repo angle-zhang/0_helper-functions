@@ -1,5 +1,5 @@
 
-# Set base path
+
 
 ## HELPER FUNCTIONS ------------------------------------
 
@@ -125,6 +125,7 @@ download_foodins_lacounty_ssi <- function() {
 }
 
 get_foodins_lacounty_ssi <- function(proj_crs) { 
+
   res <- st_read(paste0(base_path, "foodinsp23_24_SSI.gpkg")) %>%
     st_transform(proj_crs)
 }
