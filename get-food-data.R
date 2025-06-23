@@ -177,3 +177,100 @@ get_retail_food_LB_PAS <- function(proj_crs) {
     st_transform(proj_crs)  # Transform to desired CRS
 }
 
+
+# reads raw data axle point of interest data for entire U.S. 
+save_data_axle <- function(year=2022, state="CA", city=NULL) { 
+  require(LaF)
+  
+  if (!is.null(city) & is.null(state)) { 
+    stop("Please provide a state when filtering by city.")  
+  }
+  
+  data_axle_path <- paste0(base_path, "hist_food_environment/", year, "_Business_Academic_QCQ.txt/")
+  file_name <- paste0(year, "_Business_Academic_QCQ.txt")
+
+  file_full_path <- paste0(data_axle_path, file_name)
+  
+  # Detect column types (assume first 1000 rows are representative)
+  sample <- read.csv(file_full_path, nrows = 10)
+  column_types <- sapply(sample, function(col) {
+    if (is.numeric(col)) "double" else "string"
+  })
+  col_names <- names(sample)
+  
+  # Detect column types and names
+  laf_file <- laf_open_csv(filename = file_full_path, 
+                           sep = ",", 
+                           column_types = column_types,  # adjust based on actual number and type of columns
+                           column_names = col_names,
+                           skip = 0)
+  
+  # Filtering by both state and city
+  if (!is.null(state) & !is.null(city)) {
+    output_path <- paste0(processed_path, "food_environment/", year, "_data_axle_", state, "_", city, ".csv")
+    print("Filtering data...")
+    
+    rows_to_keep <- which(laf_file[, "STATE"] == state & laf_file[, "CITY"] == city)
+    filtered_data <- laf_file[rows_to_keep, ]
+    print(paste0("Writing data to output file: ", output_path))    
+    write.csv(filtered_data, output_path)
+  }
+  
+  # Filtering by state only
+  if (!is.null(state) & is.null(city)) {
+    output_path <- paste0(processed_path, "food_environment/", year, "_data_axle_", state, ".csv")
+    print("Filtering data...")
+    rows_to_keep <- which(laf_file[, "STATE"] == state)
+    filtered_data <- laf_file[rows_to_keep, ]
+    print(paste0("Writing data to output file: ", output_path))
+    
+    write.csv(filtered_data, output_path)
+  }
+  
+  # data_axle_path <- paste0(base_path, "hist_food_environment/")
+  # file_name <- paste0(2022, "_Business_Academic_QCQ.txt")
+  # processed_path <- paste0(base_path, "processed_data/")
+  # 
+  # print(state)
+  # 
+  # if(!is.null(state) & !is.null(city)) {
+  #   print(state)
+  #   
+  #   output_path <- paste0(processed_path, "/food_environment/", year, "_data_axle_", state, "_", city, ".csv")
+  #   
+  #   data <- read_chunkwise(paste0(data_axle_path, file_name, "/", file_name), sep=",") %>% 
+  #     chunked::filter(STATE == state) %>%
+  #     filter(CITY == city) %>%
+  #     write_chunkwise(paste0(output_path), chunk_size=10000)
+  # }
+  # 
+  # if(!is.null(state)) {
+  #   output_path <- paste0(processed_path, "/food_environment/", 2022, "_data_axle_", "CA", ".csv")
+  #   
+  #   data <- read_chunkwise(paste0(data_axle_path, file_name, "/", file_name)) %>% 
+  #     dplyr::filter(STATE == "CA") %>%
+  #     write_chunkwise(paste0(output_path), chunk_size=10000)
+  # }
+  
+}
+# Function to load saved data axle data
+get_data_axle <- function(year=2022, state=NULL, city=NULL) { 
+  if (!is.null(city) & is.null(state)) { 
+    stop("Please provide a state when filtering by city.")  
+  }
+  
+  file_path <- paste0(processed_path, "food_environment/", year, "_data_axle_", state, ".csv")
+  
+  if (!file.exists(file_path)) {
+    stop("File not found! Run save_data_axle() with year and state first.")
+  }
+  
+  data <- read_csv(file_path)
+  
+  return(data)
+}
+
+
+food_data <- get_data_axle(2022, state="CA")
+
+
